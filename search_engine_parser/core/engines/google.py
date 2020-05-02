@@ -32,31 +32,6 @@ class Search(BaseSearch):
         # find all class_='g' => each result
         return soup.find_all('div', class_='g')
 
-    def parse_result(self, results, **kwargs):
-        """
-        Runs every entry on the page through parse_single_result
-
-        :param results: Result of main search to extract individual results
-        :type results: list[`bs4.element.ResultSet`]
-        :returns: dictionary. Containing lists of titles, links, descriptions, direct results and other possible\
-            returns.
-        :rtype: dict
-        """
-        search_results = SearchResult()
-        for each in results:
-            try:
-                rdict = self.parse_single_result(each, **kwargs)
-                search_results.append(rdict)
-            except Exception as e:  # pylint: disable=invalid-name, broad-except
-                print("Exception: %s" % str(e))
-
-        direct_answer = self.parse_direct_answer(results[0])
-        rdict = {'direct_answer': direct_answer}
-        if direct_answer is not None:
-            search_results.append(rdict)
-
-        return search_results
-
     def parse_direct_answer(self, single_result, return_type=ReturnType.FULL):
         # returns empty string when there is no direct answer
         if return_type in (ReturnType.FULL, ReturnType.DESCRIPTION):

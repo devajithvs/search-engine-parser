@@ -31,7 +31,12 @@ class SearchItem(dict):
 
 class SearchResult():
     # Hold the results
-    results = {} # Better to use a dict
+    def __init__(self):
+        self.results = {}
+
+    def add(self, value):
+        for key in value.keys():
+            self.results[key] = value[key]
 
     def append(self, value):
         for key in value.keys():
@@ -41,10 +46,6 @@ class SearchResult():
                 self.results[key].append(value[key])
 
     def __getitem__(self, value):
-        if isinstance(value, int):
-            self.results.pop('direct_answer', None)
-            custom_result = [self.results[key][value] for key in self.keys()]
-            return dict(zip(self.keys(), custom_result))
         return self.results[value]
 
     def keys(self):
@@ -84,6 +85,7 @@ class BaseSearch:
         raise NotImplementedError(
             "subclasses must define method <parse_results>")
 
+
     def parse_result(self, results, **kwargs):
         """
         Runs every entry on the page through parse_single_result
@@ -101,8 +103,18 @@ class BaseSearch:
                 search_results.append(rdict)
             except Exception as e:  # pylint: disable=invalid-name, broad-except
                 print("Exception: %s" % str(e))
-        return search_results
+                
+        try: 
+            direct_answer = self.parse_direct_answer(results[0])
+            rdict = {'direct_answer': direct_answer}
+            if direct_answer is not None:
+                search_results.add(rdict)
+        except Exception: 
+            pass
 
+        return search_results
+        
+        
     def get_params(self, query=None, page=None, offset=None, **kwargs):
         """ This  function should be overwritten to return a dictionary of query params"""
         return {'q': query, 'page': page}
