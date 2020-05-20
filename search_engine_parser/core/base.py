@@ -2,14 +2,13 @@
 		Base class inherited by every search engine
 """
 
-import asyncio
 import random
 from abc import ABCMeta, abstractmethod
 from contextlib import suppress
 from enum import Enum, unique
 from urllib.parse import urlencode, urlparse
 
-import aiohttp
+import requests
 from bs4 import BeautifulSoup
 
 from search_engine_parser.core import utils
@@ -127,7 +126,7 @@ class BaseSearch:
         }
         return headers
 
-    async def get_source(self, url):
+    def get_source(self, url):
         """
         Returns the source code of a webpage.
 
@@ -136,20 +135,20 @@ class BaseSearch:
         :return: html source code of a given URL.
         """
         try:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(url, headers=self.headers()) as resp:
-                    html = await resp.text()
+            session = requests.Session()
+            resp = session.get(url, headers=self.headers())
+            html =  resp.text
         except Exception as exc:
             raise Exception('ERROR: {}\n'.format(exc))
         return str(html)
 
-    async def get_soup(self, url):
+    def get_soup(self, url):
         """
         Get the html soup of a query
 
         :rtype: `bs4.element.ResultSet`
         """
-        html = await self.get_source(url)
+        html =  self.get_source(url)
         return BeautifulSoup(html, 'lxml')
 
     def get_search_url(self, query=None, page=None, **kwargs):
@@ -189,16 +188,12 @@ class BaseSearch:
         :return: dictionary. Containing titles, links, netlocs and descriptions.
         """
         # Get search Page Results
-        loop = asyncio.get_event_loop()
-        soup = loop.run_until_complete(
-            self.get_soup(
-                self.get_search_url(
-                    query, page, **kwargs)))
+        soup = self.get_soup(self.get_search_url(query, page, **kwargs))
         return self.get_results(soup, **kwargs)
 
-    async def async_search(self, query=None, page=None, callback=None, **kwargs):
+    def _search(self, query=None, page=None, callback=None, **kwargs):
         """
-        Query the search engine but in async mode
+        Query the search engine but in  mode
 
         :param query: the query to search for
         :type query: str
@@ -211,5 +206,5 @@ class BaseSearch:
         # TODO callback should be called
         if callback:
             pass
-        soup = await self.get_soup(self.get_search_url(query, page, **kwargs))
+        soup =  self.get_soup(self.get_search_url(query, page, **kwargs))
         return self.get_results(soup, **kwargs)
